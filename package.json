@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "discord.js": "^13.0.1",
+    "fs": "^0.0.1-security",
+    "lodash": "^4.17.21",
+    "node-schedule": "^2.0.0"
+  }
+}
