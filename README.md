@@ -1,4 +1,4 @@
-# Discord.js Discord bot template
+# discord-article-bot
 
 basic bot template with command handler
 
