@@ -2,7 +2,9 @@ const token = require("./token.json");
 const Discord = require("discord.js");
 var fs = require("fs");
 var _ = require("lodash");
+var cronstrue = require("cronstrue");
 const schedule = require("node-schedule");
+const { time } = require("console");
 var data = fs.readFileSync("data.json");
 
 // parsing data.json
@@ -29,6 +31,12 @@ var command =
   "ex: `get article wildcard`, this will fetch a random article form wildcard category" +
   "\n" +
   "\n" +
+  "Tip: `get article`, this will give you the list of categories available" +
+  "\n" +
+  "\n" +
+  "Tip: `get article time`, this will give you the time at which you get the daily article" +
+  "\n" +
+  "\n" +
   "2. **For setting time of daily message**:" +
   "\n" +
   "\n" +
@@ -37,14 +45,9 @@ var command =
   "ex: `set article days 0 6`, this will set the days as SUN-SAT" +
   "\n" +
   "\n" +
-  "> 2. for hours(in 24hr format): ```set article time  hour [hour]```" +
+  "> 2. for time(in 24hr format): ```set article time [hour]:[mins]```" +
   "\n" +
-  "ex: `set article time hour 14`, this will give the daily article at 2pm" +
-  "\n" +
-  "\n" +
-  "> 3. For minutes: ```set article time mins [minutes]```" +
-  "\n" +
-  "ex: `set article time mins 25`, this will set the min as 25 like 2:25pm";
+  "ex: `set article time hour 14:20`, this will give the daily article at 2:20 pm";
 
 // embed command message
 const exampleEmbed = new Discord.MessageEmbed()
@@ -75,6 +78,13 @@ const rule = new schedule.RecurrenceRule();
 rule.dayOfWeek = [0, new schedule.Range(0, 6)];
 rule.hour = 10;
 rule.minute = 00;
+var startDay = 0;
+var endDay = 6;
+
+//creating a empty cron expression
+var cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay}`;
+
+var dailyUpdatesChannel = null;
 
 // fetching random article
 function fetchRandomArticle(category) {
@@ -82,9 +92,19 @@ function fetchRandomArticle(category) {
   randomArticlePosition = Math.floor(Math.random() * lengthOfArticle);
   article = data[category][randomArticlePosition];
   if (category == "WILDCARD") {
-    articleLink = article["Link to Article (from Article List)"][0];
+    try {
+      articleLink = article["Link to Article (from Article List)"][0];
+    } catch (error) {
+      console.log(error);
+      dailyUpdatesChannel.send("An error occured, could you please try again");
+    }
   } else {
-    articleLink = article["Link to Article"];
+    try {
+      articleLink = article["Link to Article"];
+    } catch (error) {
+      console.log(error);
+      dailyUpdatesChannel.send("An error occured, could you please try again");
+    }
   }
   data[category] =
     data[category][(0, randomArticlePosition)] +
@@ -98,9 +118,8 @@ function fetchRandomArticle(category) {
 // resetting schedule after changing timings
 function resetScheduler() {
   const job = schedule.scheduleJob(rule, function () {
-    client.channels.cache
-      .get("token.channelId")
-      .send(fetchRandomArticle("WILDCARD"));
+    dailyUpdatesChannel.send(fetchRandomArticle("WILDCARD"));
+    cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay}`;
   });
 }
 
@@ -117,6 +136,11 @@ client.on("ready", async () => {
 
 // handling on message events
 client.on("message", (msg) => {
+  dailyUpdatesChannel = msg.guild.channels.cache.find(
+    (channel) => channel.name === "readsomethinggreat"
+  );
+  cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay}`;
+
   if (msg.author.bot) return;
 
   if (msg.content === "get help") {
@@ -127,34 +151,68 @@ client.on("message", (msg) => {
     msg.content.startsWith("get article") ||
     msg.content.startsWith("Get article")
   ) {
-    category = _.upperCase(msg.content.split("get article ")[1]);
-    if (categories.includes(category)) {
-      msg.channel.send(fetchRandomArticle(category)).catch((err) => {
-        console.log(err);
-        msg.channel.send("coudn't fetch the article at the moment :( ");
-      });
-    } else {
+    msgRecievied = msg.content.split(" ");
+    if (msgRecievied.length == 2) {
       msg.channel.send(
-        "The specified category doesn't exists. The available categories are Wildcard, Living Better, Business & Tech, History & Culture, Science & Nature"
+        "```Here are the categories to read upon:" +
+          "\n" +
+          "1. Wildcard" +
+          "\n" +
+          "2. Living Better" +
+          "\n" +
+          "3. Business & Tech" +
+          "\n" +
+          "4. History & Culture" +
+          "\n" +
+          "5. Science & Nature```"
       );
+    } else {
+      if (msgRecievied.length == 3) {
+        category = _.upperCase(msgRecievied[2]);
+      } else {
+        category = msgRecievied.slice(2);
+        category = _.upperCase(category.join(" "));
+      }
+      if (categories.includes(category)) {
+        msg.channel.send(fetchRandomArticle(category)).catch((err) => {
+          console.log(err);
+          msg.channel.send("```coudn't fetch the article at the moment :( ```");
+        });
+      } else {
+        if (msgRecievied[2] == "time") {
+          msg.channel.send(
+            "The daily article will be coming " +
+              cronstrue.toString(cronExpression)
+          );
+        } else {
+          msg.channel.send(
+            "```The specified category doesn't exists. The available categories are Wildcard, Living Better, Business & Tech, History & Culture, Science & Nature```"
+          );
+        }
+      }
     }
   }
 
   if (msg.content.startsWith("set article ")) {
     setTimeCommand = msg.content.split(" ");
-    console.log(setTimeCommand);
     if (setTimeCommand[2] == "days") {
       startDay = setTimeCommand[3];
       endDay = setTimeCommand[4];
       rule.dayOfWeek = [0, new schedule.Range(startDay, endDay)];
     }
-    if (setTimeCommand[3] == "hour") {
-      rule.hour = setTimeCommand[4];
-    }
-    if (setTimeCommand[3] == "mins") {
-      rule.minute = setTimeCommand[4];
+    if (setTimeCommand[2] == "time") {
+      var time = setTimeCommand[3].split(":");
+      rule.hour = time[0];
+      rule.minute = time[1];
+      console.log(cronExpression);
+      console.log(rule.dayOfWeek, rule.hour, rule.minute);
     }
 
+    var cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay}`;
+    msg.channel.send(
+      "From now the daily article will be coming " +
+        cronstrue.toString(cronExpression)
+    );
     resetScheduler();
   }
 });
