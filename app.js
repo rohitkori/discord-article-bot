@@ -62,7 +62,7 @@ const exampleEmbed = new Discord.MessageEmbed()
   .setTitle("readsomethinggreat")
   .setURL("https://www.readsomethinggreat.com/")
   .setAuthor(
-    "Buy me a coffe",
+    "Buy me a coffee",
     "https://i.imgur.com/vugPtoT.png",
     "https://www.buymeacoffee.com/rahulgopathi"
   )
@@ -125,7 +125,6 @@ function fetchRandomArticle(category) {
 // resetting schedule after changing timings
 function resetScheduler() {
   const job = schedule.scheduleJob(rule, function () {
-    dailyUpdatesChannel.send("Here is the today article, do give it a read");
     dailyUpdatesChannel.send(fetchRandomArticle("WILDCARD"));
     cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay}`;
   });
