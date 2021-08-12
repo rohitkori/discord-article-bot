@@ -4,11 +4,10 @@ var fs = require("fs");
 var _ = require("lodash");
 var cronstrue = require("cronstrue");
 const schedule = require("node-schedule");
-const { time } = require("console");
-var data = fs.readFileSync("data.json");
+var articles = fs.readFileSync("articles.json");
 
-// parsing data.json
-data = JSON.parse(data);
+// parsing articles.json
+articles = JSON.parse(articles);
 
 // creating client
 const client = new Discord.Client({
@@ -22,6 +21,14 @@ categories = [
   "BUSINESS TECH",
   "HISTORY CULTURE",
   "SCIENCE NATURE",
+];
+
+categoryNames = [
+  "1. Wildcard",
+  "2. Living Better",
+  "2. Business & Tech",
+  "3. History & Culture",
+  "4. Science & Nature",
 ];
 
 // command message
@@ -54,6 +61,11 @@ const exampleEmbed = new Discord.MessageEmbed()
   .setColor("#FF3F3F")
   .setTitle("readsomethinggreat")
   .setURL("https://www.readsomethinggreat.com/")
+  .setAuthor(
+    "Buy me a coffe",
+    "https://i.imgur.com/vugPtoT.png",
+    "https://www.buymeacoffee.com/rahulgopathi"
+  )
   .setDescription(
     "A bot that gives a random article from readsomethinggreat.com"
   )
@@ -88,12 +100,12 @@ var dailyUpdatesChannel = null;
 
 // fetching random article
 function fetchRandomArticle(category) {
-  lengthOfArticle = data[category].length;
-  randomArticlePosition = Math.floor(Math.random() * lengthOfArticle);
-  article = data[category][randomArticlePosition];
+  var numberofArticles = articles[category].length;
+  var randomArticlePosition = Math.floor(Math.random() * numberofArticles);
+  article = articles[category][randomArticlePosition];
   if (category == "WILDCARD") {
     try {
-      articleLink = article["Link to Article (from Article List)"][0];
+      articleLink = article["Link to Article"][0];
     } catch (error) {
       console.log(error);
       dailyUpdatesChannel.send("An error occured, could you please try again");
@@ -106,18 +118,14 @@ function fetchRandomArticle(category) {
       dailyUpdatesChannel.send("An error occured, could you please try again");
     }
   }
-  data[category] =
-    data[category][(0, randomArticlePosition)] +
-    data[category][(randomArticlePosition + 1, lengthOfArticle)];
-  data[category] =
-    _.slice(data[category], 0, randomArticlePosition) +
-    _.slice(data[category], randomArticlePosition + 1, lengthOfArticle);
+  articles[category].splice(randomArticlePosition, 1);
   return articleLink;
 }
 
 // resetting schedule after changing timings
 function resetScheduler() {
   const job = schedule.scheduleJob(rule, function () {
+    dailyUpdatesChannel.send("Here is the today article, do give it a read");
     dailyUpdatesChannel.send(fetchRandomArticle("WILDCARD"));
     cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay}`;
   });
@@ -154,17 +162,11 @@ client.on("message", (msg) => {
     msgRecievied = msg.content.split(" ");
     if (msgRecievied.length == 2) {
       msg.channel.send(
-        "```Here are the categories to read upon:" +
-          "\n" +
-          "1. Wildcard" +
-          "\n" +
-          "2. Living Better" +
-          "\n" +
-          "3. Business & Tech" +
-          "\n" +
-          "4. History & Culture" +
-          "\n" +
-          "5. Science & Nature```"
+        "```" +
+          `Here are the  article categories to read upon:\n${categoryNames.join(
+            "\n"
+          )}` +
+          "```"
       );
     } else {
       if (msgRecievied.length == 3) {
@@ -186,7 +188,9 @@ client.on("message", (msg) => {
           );
         } else {
           msg.channel.send(
-            "```The specified category doesn't exists. The available categories are Wildcard, Living Better, Business & Tech, History & Culture, Science & Nature```"
+            "```The specified category doesn't exists. The available categories are:\n" +
+              `${categoryNames.join("\n")}` +
+              "```"
           );
         }
       }
@@ -204,8 +208,6 @@ client.on("message", (msg) => {
       var time = setTimeCommand[3].split(":");
       rule.hour = time[0];
       rule.minute = time[1];
-      console.log(cronExpression);
-      console.log(rule.dayOfWeek, rule.hour, rule.minute);
     }
 
     var cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay}`;
