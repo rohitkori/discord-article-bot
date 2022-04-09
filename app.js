@@ -85,7 +85,7 @@ const exampleEmbed = new Discord.MessageEmbed()
   )
   .setTimestamp()
   .setFooter("Happy Reading", "https://i.imgur.com/vugPtoT.png");
-
+  
 const rule = new schedule.RecurrenceRule();
 rule.dayOfWeek = [0, new schedule.Range(0, 6)];
 rule.hour = 10;
@@ -173,7 +173,12 @@ client.on("message", (msg) => {
   if (msg.author.bot) return;
 
   if (msg.content === "get help") {
-    msg.channel.send({ embeds: [exampleEmbed] });
+    msg.channel.send({ embeds: [exampleEmbed] })
+    .then((embed) => {embed.react("⬆"),
+                embed.react("⬇️")});
+          
+    
+		 
   }
 
   if (
@@ -187,6 +192,7 @@ client.on("message", (msg) => {
           `Here are the  article categories to read upon:\n${categoryNames.join(
             "\n"
           )}` +
+     
           "```"
       );
     } else {
@@ -197,10 +203,17 @@ client.on("message", (msg) => {
         category = _.upperCase(category.join(" "));
       }
       if (categories.includes(category)) {
-        msg.channel.send(fetchRandomArticle(category)).catch((err) => {
-          console.log(err);
-          msg.channel.send("```coudn't fetch the article at the moment :( ```");
+        
+        msg.channel.send(fetchRandomArticle(category))
+          .then((embed) => {embed.react('⬆'),
+                          embed.react("⬇️")})
+          .catch((err) => {
+            console.log(err);
+            msg.channel.send("```coudn't fetch the article at the moment :( ```");
         });
+          
+
+        
       } else {
         if (msgRecievied[2] == "time") {
           msg.channel.send(
