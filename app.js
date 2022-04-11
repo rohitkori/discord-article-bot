@@ -174,8 +174,7 @@ client.on("message", (msg) => {
 
   if (msg.content === "get help") {
     msg.channel.send({ embeds: [exampleEmbed] })
-    .then((embed) => {embed.react("⬆"),
-                embed.react("⬇️")});
+    
           
     
 		 
