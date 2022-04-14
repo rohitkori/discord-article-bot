@@ -175,10 +175,6 @@ client.on("message", (msg) => {
 
   if (msg.content === prefix + "get help") {
     msg.channel.send({ embeds: [exampleEmbed] })
-
-
-
-
   }
 
   if (
