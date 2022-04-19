@@ -1,10 +1,11 @@
-const token = require("./token.json");
 const Discord = require("discord.js");
 var fs = require("fs");
 var _ = require("lodash");
 var cronstrue = require("cronstrue");
 const schedule = require("node-schedule");
 var articles = fs.readFileSync("articles.json");
+const dotenv = require('dotenv').config();
+const { scheduleJob } = require("node-schedule");
 
 // parsing articles.json
 articles = JSON.parse(articles);
@@ -31,7 +32,7 @@ categoryNames = [
   "4. Science & Nature",
 ];
 
-var prefix = "*";
+const prefix = dotenv.parsed.PREFIX;
 // command message
 var command =
   "1. **For getting a random article**:" + "```" + prefix + "get article[category]``` " +
@@ -94,9 +95,14 @@ rule.minute = 00;
 var startDay = 0;
 var endDay = 6;
 
-//creating a empty cron expression
-var cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay}`;
+const ruleForBMC = new schedule.RecurrenceRule();
+ruleForBMC.dayOfWeek = [0, new schedule.Range(0, 6, 2)];
+ruleForBMC.hour = 12;
+ruleForBMC.minute = 00;
 
+//creating a empty cron expression
+var cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay} `;
+var cronExpBMC = `${ruleForBMC.minute} ${ruleForBMC.hour} * * ${ruleForBMC.dayOfWeek}`;
 var dailyUpdatesChannel = null;
 
 // fetching random article
@@ -124,6 +130,28 @@ function fetchRandomArticle(category) {
   return articleLink;
 }
 
+function BMCLinkScheduler() {
+  console.log(ruleForBMC);
+  const job = schedule.scheduleJob(ruleForBMC, function () {
+    client.guilds.cache.each((guild) => {
+      try {
+        const channel =
+          guild.channels.cache.find(
+            (channel) => channel.name === "readsomethinggreat"
+          ) || guild.channel.cache.first();
+        if (channel) {
+          channel.send("**Buy me a Coffee link**- " + "https://www.buymeacoffee.com/rahulgopathi");
+          console.log("link send");
+        } else {
+          console.log("link not send");
+        }
+      } catch (err) {
+        console.log('error is there');
+      }
+    });
+    cronExpBMC = `${ruleForBMC.minute} ${ruleForBMC.hour} * * ${ruleForBMC.dayOfWeek}`
+  });
+}
 // resetting schedule after changing timings
 function resetScheduler() {
   if (rule.minute < 30) {
@@ -152,7 +180,7 @@ function resetScheduler() {
         console.log("Could not send message to " + guild.name + ".");
       }
     });
-    cronExpression = `${rule.minute} ${rule.hour} * * ${startDay} -${endDay} `;
+    cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay} `;
   });
 }
 
@@ -165,11 +193,12 @@ client.on("ready", async () => {
   client.user.setActivity("Article", { type: "PLAYING" });
 
   resetScheduler();
+  BMCLinkScheduler();
 });
 
 // handling on message events
 client.on("message", (msg) => {
-  cronExpression = `${rule.minute} ${rule.hour} * * ${startDay} -${endDay} `;
+  cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay} `;
 
   if (msg.author.bot) return;
 
@@ -209,9 +238,6 @@ client.on("message", (msg) => {
             console.log(err);
             msg.channel.send("```coudn't fetch the article at the moment :( ```");
           });
-
-
-
       } else {
         if (msgRecievied[2] == "time") {
           msg.channel.send(
@@ -297,4 +323,4 @@ client.on("message", (msg) => {
 });
 
 //Token need in token.json
-client.login(token.token);
+client.login(dotenv.parsed.TOKEN);
