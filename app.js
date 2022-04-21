@@ -131,7 +131,6 @@ function fetchRandomArticle(category) {
 }
 
 function BMCLinkScheduler() {
-  console.log(ruleForBMC);
   const job = schedule.scheduleJob(ruleForBMC, function () {
     client.guilds.cache.each((guild) => {
       try {
@@ -140,7 +139,8 @@ function BMCLinkScheduler() {
             (channel) => channel.name === "readsomethinggreat"
           ) || guild.channel.cache.first();
         if (channel) {
-          channel.send("**Buy me a Coffee link**- " + "https://www.buymeacoffee.com/rahulgopathi");
+          bmcLink = "https://www.buymeacoffee.com/rahulgopathi";
+          channel.send("**Buy me a Coffee link**- " + bmcLink);
           console.log("link send");
         } else {
           console.log("link not send");
