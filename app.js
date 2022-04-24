@@ -96,13 +96,13 @@ var startDay = 0;
 var endDay = 6;
 
 const ruleForBMC = new schedule.RecurrenceRule();
-ruleForBMC.dayOfWeek = [0, new schedule.Range(0, 6, 2)];
-ruleForBMC.hour = 12;
-ruleForBMC.minute = 00;
+ruleForBMC.dayOfWeek = [0, new schedule.Range(dotenv.parsed.daysofWeek_BMCLink)];
+ruleForBMC.hour = dotenv.parsed.hour_BMCLink;
+ruleForBMC.minute = dotenv.parsed.minute_BMCLink;
+ruleForBMC.second = dotenv.parsed.second_BMCLink;
 
 //creating a empty cron expression
 var cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay} `;
-var cronExpBMC = `${ruleForBMC.minute} ${ruleForBMC.hour} * * ${ruleForBMC.dayOfWeek}`;
 var dailyUpdatesChannel = null;
 
 // fetching random article
@@ -129,7 +129,7 @@ function fetchRandomArticle(category) {
   console.log("Generated random article succesfully");
   return articleLink;
 }
-
+//bmc link schedule
 function BMCLinkScheduler() {
   const job = schedule.scheduleJob(ruleForBMC, function () {
     client.guilds.cache.each((guild) => {
@@ -139,8 +139,7 @@ function BMCLinkScheduler() {
             (channel) => channel.name === "readsomethinggreat"
           ) || guild.channel.cache.first();
         if (channel) {
-          bmcLink = "https://www.buymeacoffee.com/rahulgopathi";
-          channel.send("**Buy me a Coffee link**- " + bmcLink);
+          channel.send("**Buy me a Coffee link**- " + dotenv.parsed.BMC_Link);
           console.log("link send");
         } else {
           console.log("link not send");
@@ -149,9 +148,9 @@ function BMCLinkScheduler() {
         console.log('error is there');
       }
     });
-    cronExpBMC = `${ruleForBMC.minute} ${ruleForBMC.hour} * * ${ruleForBMC.dayOfWeek}`
   });
 }
+
 // resetting schedule after changing timings
 function resetScheduler() {
   if (rule.minute < 30) {
