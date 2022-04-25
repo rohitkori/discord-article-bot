@@ -1,10 +1,11 @@
-const token = require("./token.json");
 const Discord = require("discord.js");
 var fs = require("fs");
 var _ = require("lodash");
 var cronstrue = require("cronstrue");
 const schedule = require("node-schedule");
 var articles = fs.readFileSync("articles.json");
+const dotenv = require('dotenv').config();
+const { scheduleJob } = require("node-schedule");
 
 // parsing articles.json
 articles = JSON.parse(articles);
@@ -31,30 +32,31 @@ categoryNames = [
   "4. Science & Nature",
 ];
 
+const prefix = dotenv.parsed.PREFIX;
 // command message
 var command =
-  "1. **For getting a random article**: ```get article [category]``` " +
+  "1. **For getting a random article**:" + "```" + prefix + "get article[category]``` " +
   "\n" +
-  "ex: `get article wildcard`, this will fetch a random article form wildcard category" +
-  "\n" +
-  "\n" +
-  "Tip: `get article`, this will give you the list of categories available" +
+  "ex: " + "`" + prefix + "get article wildcard`, this will fetch a random article form wildcard category" +
   "\n" +
   "\n" +
-  "Tip: `get article time`, this will give you the time at which you get the daily article" +
+  "Tip: " + "`" + prefix + "get article`, this will give you the list of categories available" +
+  "\n" +
+  "\n" +
+  "Tip: " + "`" + prefix + "get article time`, this will give you the time at which you get the daily article" +
   "\n" +
   "\n" +
   "2. **For setting time of daily message**:" +
   "\n" +
   "\n" +
-  "> 1. for days(in integers from 0-6): ```set article days [startDay] [endDay]```" +
+  "> 1. for days(in integers from 0-6): " + "```" + prefix + "set article days[startDay][endDay]```" +
   "\n" +
-  "ex: `set article days 0 6`, this will set the days as SUN-SAT" +
+  "ex: " + "`" + prefix + "set article days 0 6`, this will set the days as SUN-SAT" +
   "\n" +
   "\n" +
-  "> 2. for time(in 24hr format): ```set article time [hour]:[mins]```" +
+  "> 2. for time(in 24hr format): " + "```" + prefix + "set article time[hour]: [mins]```" +
   "\n" +
-  "ex: `set article time 14:20`, this will give the daily article at 2:20 pm";
+  "ex: " + "`" + prefix + "set article time 14: 20`, this will give the daily article at 2:20 pm";
 
 // embed command message
 const exampleEmbed = new Discord.MessageEmbed()
@@ -85,7 +87,7 @@ const exampleEmbed = new Discord.MessageEmbed()
   )
   .setTimestamp()
   .setFooter("Happy Reading", "https://i.imgur.com/vugPtoT.png");
-  
+
 const rule = new schedule.RecurrenceRule();
 rule.dayOfWeek = [0, new schedule.Range(0, 6)];
 rule.hour = 10;
@@ -93,9 +95,14 @@ rule.minute = 00;
 var startDay = 0;
 var endDay = 6;
 
-//creating a empty cron expression
-var cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay}`;
+const ruleForBMC = new schedule.RecurrenceRule();
+ruleForBMC.dayOfWeek = [0, new schedule.Range(dotenv.parsed.daysofWeek_BMCLink)];
+ruleForBMC.hour = dotenv.parsed.hour_BMCLink;
+ruleForBMC.minute = dotenv.parsed.minute_BMCLink;
+ruleForBMC.second = dotenv.parsed.second_BMCLink;
 
+//creating a empty cron expression
+var cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay} `;
 var dailyUpdatesChannel = null;
 
 // fetching random article
@@ -121,6 +128,27 @@ function fetchRandomArticle(category) {
   articles[category].splice(randomArticlePosition, 1);
   console.log("Generated random article succesfully");
   return articleLink;
+}
+//bmc link schedule
+function BMCLinkScheduler() {
+  const job = schedule.scheduleJob(ruleForBMC, function () {
+    client.guilds.cache.each((guild) => {
+      try {
+        const channel =
+          guild.channels.cache.find(
+            (channel) => channel.name === "readsomethinggreat"
+          ) || guild.channel.cache.first();
+        if (channel) {
+          channel.send("**Buy me a Coffee link**- " + dotenv.parsed.BMC_Link);
+          console.log("link send");
+        } else {
+          console.log("link not send");
+        }
+      } catch (err) {
+        console.log('error is there');
+      }
+    });
+  });
 }
 
 // resetting schedule after changing timings
@@ -151,7 +179,7 @@ function resetScheduler() {
         console.log("Could not send message to " + guild.name + ".");
       }
     });
-    cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay}`;
+    cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay} `;
   });
 }
 
@@ -164,35 +192,32 @@ client.on("ready", async () => {
   client.user.setActivity("Article", { type: "PLAYING" });
 
   resetScheduler();
+  BMCLinkScheduler();
 });
 
 // handling on message events
 client.on("message", (msg) => {
-  cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay}`;
+  cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay} `;
 
   if (msg.author.bot) return;
 
-  if (msg.content === "get help") {
+  if (msg.content === prefix + "get help") {
     msg.channel.send({ embeds: [exampleEmbed] })
-    
-          
-    
-		 
   }
 
   if (
-    msg.content.startsWith("get article") ||
-    msg.content.startsWith("Get article")
+    msg.content.startsWith(prefix + "get article") ||
+    msg.content.startsWith(prefix + "Get article")
   ) {
     msgRecievied = msg.content.split(" ");
     if (msgRecievied.length == 2) {
       msg.channel.send(
         "```" +
-          `Here are the  article categories to read upon:\n${categoryNames.join(
-            "\n"
-          )}` +
-     
-          "```"
+        `Here are the  article categories to read upon:\n${categoryNames.join(
+          "\n"
+        )}` +
+
+        "```"
       );
     } else {
       if (msgRecievied.length == 3) {
@@ -202,35 +227,34 @@ client.on("message", (msg) => {
         category = _.upperCase(category.join(" "));
       }
       if (categories.includes(category)) {
-        
+
         msg.channel.send(fetchRandomArticle(category))
-          .then((embed) => {embed.react('⬆'),
-                          embed.react("⬇️")})
+          .then((embed) => {
+            embed.react('⬆'),
+              embed.react("⬇️")
+          })
           .catch((err) => {
             console.log(err);
             msg.channel.send("```coudn't fetch the article at the moment :( ```");
-        });
-          
-
-        
+          });
       } else {
         if (msgRecievied[2] == "time") {
           msg.channel.send(
             "The daily article will be coming " +
-              cronstrue.toString(cronExpression)
+            cronstrue.toString(cronExpression)
           );
         } else {
           msg.channel.send(
             "```The specified category doesn't exists. The available categories are:\n" +
-              `${categoryNames.join("\n")}` +
-              "```"
+            `${categoryNames.join("\n")}` +
+            "```"
           );
         }
       }
     }
   }
 
-  if (msg.content.startsWith("set article ")) {
+  if (msg.content.startsWith(prefix + "set article ")) {
     correctTimeProvided = false;
     setTimeCommand = msg.content.split(" ");
     if (setTimeCommand[2] == "days") {
@@ -283,14 +307,14 @@ client.on("message", (msg) => {
     if (updatedcronExpression !== cronExpression) {
       msg.channel.send(
         "From now the daily article will be coming " +
-          cronstrue.toString(updatedcronExpression)
+        cronstrue.toString(updatedcronExpression)
       );
       cronExpression = updatedcronExpression;
     } else if (correctTimeProvided == true) {
       msg.channel.send(
         "```The daily article time is already " +
-          cronstrue.toString(updatedcronExpression) +
-          "```"
+        cronstrue.toString(updatedcronExpression) +
+        "```"
       );
     }
     resetScheduler();
@@ -298,4 +322,4 @@ client.on("message", (msg) => {
 });
 
 //Token need in token.json
-client.login(token.token);
+client.login(dotenv.parsed.TOKEN);
