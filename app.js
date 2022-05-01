@@ -153,13 +153,13 @@ function BMCLinkScheduler() {
 
 // resetting schedule after changing timings
 function resetScheduler() {
-  if (rule.minute < 30) {
-    rule.hour = rule.hour - 6;
-    rule.minute = parseInt(rule.minute) + 30;
-  } else {
-    rule.hour = rule.hour - 5;
-    rule.minute = parseInt(rule.minute) - 30;
-  }
+  // if (rule.minute < 30) {
+  //   rule.hour = rule.hour - 1;
+  //   rule.minute = parseInt(rule.minute) + 30;
+  // } else {
+  //   rule.hour = rule.hour;
+  //   rule.minute = parseInt(rule.minute) - 30;
+  // }
   console.log(rule);
   const job = schedule.scheduleJob(rule, function () {
     articleLink = fetchRandomArticle("WILDCARD");
@@ -182,6 +182,33 @@ function resetScheduler() {
     cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay} `;
   });
 }
+
+// const request = require('request');
+// const { url } = require("inspector");
+// const base64Credentials = Buffer.from('kori.1@iitj.ac.in:mgrz0ws0av6OQ5ZSJzVZ').toString('base64')
+// const options = {
+//   url: 'https://api.urlmeta.org/?url=https://theprofile.substack.com/p/why-the-worlds-most-confident-people',
+//   headers: {
+//     'Authorization': 'Basic ' + base64Credentials
+//   }
+// }
+
+// function callback(error, response, body) {
+//   if (!error && response.statusCode === 200) {
+//     let data = JSON.parse(body)
+
+//     if (data.result.status == 'OK') {
+//       console.log(data.meta)
+//       image = data.meta["image"];
+//     } else {
+//       console.log(data.result.reason)
+//     }
+//   } else {
+//     console.log(error, body)
+//   }
+// }
+
+// request(options, callback)
 
 //Playing Message
 client.on("ready", async () => {
@@ -260,18 +287,27 @@ client.on("message", (msg) => {
     if (setTimeCommand[2] == "days") {
       try {
         if (
-          setTimeCommand.lenght !== 5 ||
-          setTimeCommand[3] == "" ||
-          setTimeCommand[4] == ""
+          // setTimeCommand.lenght != 5
+          // setTimeCommand[3] == "" ||
+          // setTimeCommand[4] == ""
+          setTimeCommand.length === 5 &&
+          setTimeCommand[3] != "" &&
+          setTimeCommand[4] != ""
         ) {
+          if (setTimeCommand[3] < 7 && setTimeCommand[4] < 7 && setTimeCommand[3] >= 0 && setTimeCommand[4] >= 0) {
+            startDay = setTimeCommand[3];
+            endDay = setTimeCommand[4];
+            rule.dayOfWeek = [0, new schedule.Range(startDay, endDay)];
+            correctTimeProvided = true;
+          } else {
+            msg.channel.send(
+              "```Please sepecify Days from 0 to 6.\nEx: " + prefix + "set article days 0 6```"
+            )
+          }
+        } else if (setTimeCommand.length != 5) {
           msg.channel.send(
-            "```Please sepecify time after the command.\nEx:set article days 0 6```"
-          );
-        } else {
-          startDay = setTimeCommand[3];
-          endDay = setTimeCommand[4];
-          rule.dayOfWeek = [0, new schedule.Range(startDay, endDay)];
-          correctTimeProvided = true;
+            "```Please sepecify time after the command.\nEx: " + prefix + "set article days 0 6```"
+          )
         }
       } catch (error) {
         console.log(error);
@@ -286,31 +322,37 @@ client.on("message", (msg) => {
           msg.channel.send(
             "```Please specify time in [hours]:[minutes] format ```"
           );
-        } else {
+        } else if (time[0] > 23 || time[1] > 59 || time[0] < 0 || time[1] < 0) {
+          msg.channel.send("```Hour should be less than 24 & Minute should be less than 60```");
+          correctTimeProvided = true;
+        } else if (time[0] < 23 || time[1] < 59 || time[0] >= 0 || time[1] >= 0) {
           rule.hour = time[0];
           rule.minute = time[1];
           correctTimeProvided = true;
         }
-      } catch (error) {
+      }
+      catch (error) {
         console.log(error);
         msg.channel.send(
-          "```Please sepecify time after the command.\nEx:set article time hour 14:20```"
+          "```Please sepecify time after the command.\nEx: " + prefix + "set article time hour 14:20```"
         );
       }
     } else {
       msg.channel.send(
-        "```wrong command :( please type [get help] for the commands```"
+        "```wrong command :( please type [" + prefix + "get help] for the commands```"
       );
     }
 
     var updatedcronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay}`;
-    if (updatedcronExpression !== cronExpression) {
+    console.log(updatedcronExpression);
+    console.log(cronExpression);
+    if (correctTimeProvided == true) {
       msg.channel.send(
         "From now the daily article will be coming " +
         cronstrue.toString(updatedcronExpression)
       );
       cronExpression = updatedcronExpression;
-    } else if (correctTimeProvided == true) {
+    } else {
       msg.channel.send(
         "```The daily article time is already " +
         cronstrue.toString(updatedcronExpression) +
@@ -320,6 +362,7 @@ client.on("message", (msg) => {
     resetScheduler();
   }
 });
+
 
 //Token need in token.json
 client.login(dotenv.parsed.TOKEN);
