@@ -153,13 +153,6 @@ function BMCLinkScheduler() {
 
 // resetting schedule after changing timings
 function resetScheduler() {
-  // if (rule.minute < 30) {
-  //   rule.hour = rule.hour - 1;
-  //   rule.minute = parseInt(rule.minute) + 30;
-  // } else {
-  //   rule.hour = rule.hour;
-  //   rule.minute = parseInt(rule.minute) - 30;
-  // }
   console.log(rule);
   const job = schedule.scheduleJob(rule, function () {
     articleLink = fetchRandomArticle("WILDCARD");
@@ -183,32 +176,6 @@ function resetScheduler() {
   });
 }
 
-// const request = require('request');
-// const { url } = require("inspector");
-// const base64Credentials = Buffer.from('kori.1@iitj.ac.in:mgrz0ws0av6OQ5ZSJzVZ').toString('base64')
-// const options = {
-//   url: 'https://api.urlmeta.org/?url=https://theprofile.substack.com/p/why-the-worlds-most-confident-people',
-//   headers: {
-//     'Authorization': 'Basic ' + base64Credentials
-//   }
-// }
-
-// function callback(error, response, body) {
-//   if (!error && response.statusCode === 200) {
-//     let data = JSON.parse(body)
-
-//     if (data.result.status == 'OK') {
-//       console.log(data.meta)
-//       image = data.meta["image"];
-//     } else {
-//       console.log(data.result.reason)
-//     }
-//   } else {
-//     console.log(error, body)
-//   }
-// }
-
-// request(options, callback)
 
 //Playing Message
 client.on("ready", async () => {
@@ -230,7 +197,9 @@ client.on("message", (msg) => {
 
   if (msg.content === prefix + "get help") {
     msg.channel.send({ embeds: [exampleEmbed] })
-  }
+  }//else if (msg.content === "get help" || msg.content === "get article") {
+  //   msg.reply("```Are you trying to call me?```")
+  // }
 
   if (
     msg.content.startsWith(prefix + "get article") ||
@@ -280,16 +249,17 @@ client.on("message", (msg) => {
       }
     }
   }
+  if (msg.content === "get help" || msg.content === "get article") {
+    msg.reply("```Are you trying to call me?```")
+  }
 
   if (msg.content.startsWith(prefix + "set article ")) {
     correctTimeProvided = false;
+    displayTime = true;
     setTimeCommand = msg.content.split(" ");
     if (setTimeCommand[2] == "days") {
       try {
         if (
-          // setTimeCommand.lenght != 5
-          // setTimeCommand[3] == "" ||
-          // setTimeCommand[4] == ""
           setTimeCommand.length === 5 &&
           setTimeCommand[3] != "" &&
           setTimeCommand[4] != ""
@@ -302,12 +272,14 @@ client.on("message", (msg) => {
           } else {
             msg.channel.send(
               "```Please sepecify Days from 0 to 6.\nEx: " + prefix + "set article days 0 6```"
-            )
+            );
+            displayTime = false;
           }
         } else if (setTimeCommand.length != 5) {
           msg.channel.send(
             "```Please sepecify time after the command.\nEx: " + prefix + "set article days 0 6```"
-          )
+          );
+          displayTime = false;
         }
       } catch (error) {
         console.log(error);
@@ -320,11 +292,12 @@ client.on("message", (msg) => {
         var time = setTimeCommand[3].split(":");
         if (time.length !== 2 || time[0] == "" || time[1] == "") {
           msg.channel.send(
-            "```Please specify time in [hours]:[minutes] format ```"
+            "```Please specify time in [hours]:[minutes] format where hours are in 24 hour format```"
           );
+          displayTime = false;
         } else if (time[0] > 23 || time[1] > 59 || time[0] < 0 || time[1] < 0) {
           msg.channel.send("```Hour should be less than 24 & Minute should be less than 60```");
-          correctTimeProvided = true;
+          displayTime = false;
         } else if (time[0] < 23 || time[1] < 59 || time[0] >= 0 || time[1] >= 0) {
           rule.hour = time[0];
           rule.minute = time[1];
@@ -336,23 +309,25 @@ client.on("message", (msg) => {
         msg.channel.send(
           "```Please sepecify time after the command.\nEx: " + prefix + "set article time hour 14:20```"
         );
+        displayTime = false;
       }
     } else {
       msg.channel.send(
         "```wrong command :( please type [" + prefix + "get help] for the commands```"
       );
+      displayTime = false;
     }
 
     var updatedcronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay}`;
     console.log(updatedcronExpression);
     console.log(cronExpression);
-    if (correctTimeProvided == true) {
+    if (correctTimeProvided == true && displayTime == true) {
       msg.channel.send(
         "From now the daily article will be coming " +
         cronstrue.toString(updatedcronExpression)
       );
       cronExpression = updatedcronExpression;
-    } else {
+    } else if (displayTime == true) {
       msg.channel.send(
         "```The daily article time is already " +
         cronstrue.toString(updatedcronExpression) +

@@ -1,64 +1,43 @@
-# discord-article-bot
+# Discord Article Bot
 
-basic bot template with command handler
+This is a bot that fetch article from [readsomethinggreat](https://www.readsomethinggreat.com/)
 
-Change Token in `token.json`
 
-make commands in `commands` folder
+### Requirement 
+- Node.js
+- discord.js
+- other packages of `npm`
 
-there is `ping` command in `commands` folder
-the default prefix of the bot is `!` you can change this in the `config.json`
+### Procedure
 
-### Prerequisites
 
-What things you need to install the software and how to install them
+- Install [Node.js](https://nodejs.org/en/)
 
-```
-Node.js
-```
+- After you have node.js
+- create a folder on your computer
+- On windows open cmd and copy the folder location from top of the file browser
+- on cmd type cd "then paste the location" and enter
+- do in the cmd `npm i discord.js` to install `discord.js`
+- before you do the install command make sure the cmd window is in the right folder
 
-### Installing
-
-A step by step series of how to get the bot running
-
-Install Node.js
-
-```
-Install Node.js
-goto downloads
-you can choose the lts or the current version of node.js depending on what you want
-then download the installer according to your operating system
-```
-
-[Node.js](https://nodejs.org/en/)
-
-Installing discord.js and making the bot folder
+- Getting this bot and starting it
 
 ```
-After you have node.js
-create a folder on your computer
-On windows open cmd and copy the folder location from top of the file browser
-and on cmd type cd "then paste the location" and enter
-Then do in the cmd npm i discord.js to install discord.js
-before you do the install command make sure the cmd window is in the right folder
-what is the api used to connect to discord
+- Download this project as a zip file then move the zip file to the folder you created
+- then unzip it there then rename ".env.example" to ".env"
+- put token in the ".env", to get a token go to Discord Developer Site link below 
+- install dotenv by typing "npm install dotenv" in terminal
+- declare PREFIX and other variables in ".env" according to your choice
+- you can start bot by typing node app.js
 ```
-
-Getting this bot and starting it
-
-```
-Download this project as a zip file then move the zip file to the folder you created
-then unzip it there then put token in the token.json to get a token goto Discord Developer Site link below
-after you have token in token.json and have installed discord.js you can start bot by typing node app.js
-```
-
 [Discord Developer Site](https://discordapp.com/developers/applications/)
+
 
 Other things you can do for bot develoment
 
 ```
 you can install nodemon to restart the bot everytime the bot file is changed
-to install nodemon globally type npm i -g nodemon
+to install nodemon globally type "npm i -g nodemon"
 ```
 
 ## Built With

@@ -7,9 +7,7 @@
     "lodash": "^4.17.21",
     "node-cron": "^3.0.0",
     "node-schedule": "^2.0.0",
-    "nodemon": "^2.0.16",
-    "request": "^2.88.2",
-    "url-metadata": "^2.5.0"
+    "nodemon": "^2.0.16"
   },
   "name": "discord-article-bot",
   "description": "basic bot template with command handler",
