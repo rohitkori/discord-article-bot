@@ -197,9 +197,7 @@ client.on("message", (msg) => {
 
   if (msg.content === prefix + "get help") {
     msg.channel.send({ embeds: [exampleEmbed] })
-  }//else if (msg.content === "get help" || msg.content === "get article") {
-  //   msg.reply("```Are you trying to call me?```")
-  // }
+  }
 
   if (
     msg.content.startsWith(prefix + "get article") ||
