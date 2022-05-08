@@ -253,7 +253,7 @@ client.on("message", (msg) => {
 
   if (msg.content.startsWith(prefix + "set article ")) {
     correctTimeProvided = false;
-    displayTime = true;
+    displayDailyArticleTime = true;   //if true send daily article time expression
     setTimeCommand = msg.content.split(" ");
     if (setTimeCommand[2] == "days") {
       try {
@@ -271,13 +271,13 @@ client.on("message", (msg) => {
             msg.channel.send(
               "```Please sepecify Days from 0 to 6.\nEx: " + prefix + "set article days 0 6```"
             );
-            displayTime = false;
+            displayDailyArticleTime = false;
           }
         } else if (setTimeCommand.length != 5) {
           msg.channel.send(
             "```Please sepecify time after the command.\nEx: " + prefix + "set article days 0 6```"
           );
-          displayTime = false;
+          displayDailyArticleTime = false;
         }
       } catch (error) {
         console.log(error);
@@ -292,10 +292,10 @@ client.on("message", (msg) => {
           msg.channel.send(
             "```Please specify time in [hours]:[minutes] format where hours are in 24 hour format```"
           );
-          displayTime = false;
+          displayDailyArticleTime = false;
         } else if (time[0] > 23 || time[1] > 59 || time[0] < 0 || time[1] < 0) {
           msg.channel.send("```Hour should be less than 24 & Minute should be less than 60```");
-          displayTime = false;
+          displayDailyArticleTime = false;
         } else if (time[0] < 23 || time[1] < 59 || time[0] >= 0 || time[1] >= 0) {
           rule.hour = time[0];
           rule.minute = time[1];
@@ -307,25 +307,24 @@ client.on("message", (msg) => {
         msg.channel.send(
           "```Please sepecify time after the command.\nEx: " + prefix + "set article time hour 14:20```"
         );
-        displayTime = false;
+        displayDailyArticleTime = false;
       }
     } else {
       msg.channel.send(
         "```wrong command :( please type [" + prefix + "get help] for the commands```"
       );
-      displayTime = false;
+      displayDailyArticleTime = false;
     }
 
     var updatedcronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay}`;
-    console.log(updatedcronExpression);
-    console.log(cronExpression);
-    if (correctTimeProvided == true && displayTime == true) {
+
+    if (correctTimeProvided == true && displayDailyArticleTime == true) {
       msg.channel.send(
         "From now the daily article will be coming " +
         cronstrue.toString(updatedcronExpression)
       );
       cronExpression = updatedcronExpression;
-    } else if (displayTime == true) {
+    } else if (displayDailyArticleTime) {
       msg.channel.send(
         "```The daily article time is already " +
         cronstrue.toString(updatedcronExpression) +
