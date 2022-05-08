@@ -153,13 +153,6 @@ function BMCLinkScheduler() {
 
 // resetting schedule after changing timings
 function resetScheduler() {
-  if (rule.minute < 30) {
-    rule.hour = rule.hour - 6;
-    rule.minute = parseInt(rule.minute) + 30;
-  } else {
-    rule.hour = rule.hour - 5;
-    rule.minute = parseInt(rule.minute) - 30;
-  }
   console.log(rule);
   const job = schedule.scheduleJob(rule, function () {
     articleLink = fetchRandomArticle("WILDCARD");
@@ -182,6 +175,7 @@ function resetScheduler() {
     cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay} `;
   });
 }
+
 
 //Playing Message
 client.on("ready", async () => {
@@ -253,25 +247,37 @@ client.on("message", (msg) => {
       }
     }
   }
+  if (msg.content === "get help" || msg.content === "get article") {
+    msg.reply("```Are you trying to call me?```")
+  }
 
   if (msg.content.startsWith(prefix + "set article ")) {
     correctTimeProvided = false;
+    displayDailyArticleTime = true;   //if true send daily article time expression
     setTimeCommand = msg.content.split(" ");
     if (setTimeCommand[2] == "days") {
       try {
         if (
-          setTimeCommand.lenght !== 5 ||
-          setTimeCommand[3] == "" ||
-          setTimeCommand[4] == ""
+          setTimeCommand.length === 5 &&
+          setTimeCommand[3] != "" &&
+          setTimeCommand[4] != ""
         ) {
+          if (setTimeCommand[3] < 7 && setTimeCommand[4] < 7 && setTimeCommand[3] >= 0 && setTimeCommand[4] >= 0) {
+            startDay = setTimeCommand[3];
+            endDay = setTimeCommand[4];
+            rule.dayOfWeek = [0, new schedule.Range(startDay, endDay)];
+            correctTimeProvided = true;
+          } else {
+            msg.channel.send(
+              "```Please sepecify Days from 0 to 6.\nEx: " + prefix + "set article days 0 6```"
+            );
+            displayDailyArticleTime = false;
+          }
+        } else if (setTimeCommand.length != 5) {
           msg.channel.send(
-            "```Please sepecify time after the command.\nEx:set article days 0 6```"
+            "```Please sepecify time after the command.\nEx: " + prefix + "set article days 0 6```"
           );
-        } else {
-          startDay = setTimeCommand[3];
-          endDay = setTimeCommand[4];
-          rule.dayOfWeek = [0, new schedule.Range(startDay, endDay)];
-          correctTimeProvided = true;
+          displayDailyArticleTime = false;
         }
       } catch (error) {
         console.log(error);
@@ -284,33 +290,41 @@ client.on("message", (msg) => {
         var time = setTimeCommand[3].split(":");
         if (time.length !== 2 || time[0] == "" || time[1] == "") {
           msg.channel.send(
-            "```Please specify time in [hours]:[minutes] format ```"
+            "```Please specify time in [hours]:[minutes] format where hours are in 24 hour format```"
           );
-        } else {
+          displayDailyArticleTime = false;
+        } else if (time[0] > 23 || time[1] > 59 || time[0] < 0 || time[1] < 0) {
+          msg.channel.send("```Hour should be less than 24 & Minute should be less than 60```");
+          displayDailyArticleTime = false;
+        } else if (time[0] < 23 || time[1] < 59 || time[0] >= 0 || time[1] >= 0) {
           rule.hour = time[0];
           rule.minute = time[1];
           correctTimeProvided = true;
         }
-      } catch (error) {
+      }
+      catch (error) {
         console.log(error);
         msg.channel.send(
-          "```Please sepecify time after the command.\nEx:set article time hour 14:20```"
+          "```Please sepecify time after the command.\nEx: " + prefix + "set article time hour 14:20```"
         );
+        displayDailyArticleTime = false;
       }
     } else {
       msg.channel.send(
-        "```wrong command :( please type [get help] for the commands```"
+        "```wrong command :( please type [" + prefix + "get help] for the commands```"
       );
+      displayDailyArticleTime = false;
     }
 
     var updatedcronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay}`;
-    if (updatedcronExpression !== cronExpression) {
+
+    if (correctTimeProvided == true && displayDailyArticleTime == true) {
       msg.channel.send(
         "From now the daily article will be coming " +
         cronstrue.toString(updatedcronExpression)
       );
       cronExpression = updatedcronExpression;
-    } else if (correctTimeProvided == true) {
+    } else if (displayDailyArticleTime) {
       msg.channel.send(
         "```The daily article time is already " +
         cronstrue.toString(updatedcronExpression) +
@@ -320,6 +334,7 @@ client.on("message", (msg) => {
     resetScheduler();
   }
 });
+
 
 //Token need in token.json
 client.login(dotenv.parsed.TOKEN);
