@@ -195,6 +195,13 @@ client.on("message", (msg) => {
 
   if (msg.author.bot) return;
 
+  if (msg.content === "get help" || msg.content === "get article") {
+    msg.channel.send("Are you trying to call me?")
+      .then((text) => {
+        text.channel.send("My prefix is " + "`" + prefix + "`" + "\n" + "Ex - " + "`*get help`")
+      })
+
+  }
   if (msg.content === prefix + "get help") {
     msg.channel.send({ embeds: [exampleEmbed] })
   }
@@ -246,9 +253,6 @@ client.on("message", (msg) => {
         }
       }
     }
-  }
-  if (msg.content === "get help" || msg.content === "get article") {
-    msg.reply("```Are you trying to call me?```")
   }
 
   if (msg.content.startsWith(prefix + "set article ")) {
