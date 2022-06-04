@@ -114,3 +114,6 @@ dist
 .vscode-test
 
 .env
+
+#Api credentials 
+google_sheets_api.json
