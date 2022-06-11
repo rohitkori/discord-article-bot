@@ -166,7 +166,7 @@ async function resetScheduler() {
   const job = schedule.scheduleJob(rule, function () {
     numberofArticles = articles["WILDCARD"].length;
 
-    console.log(ArticlePosition);
+
     article = articles["WILDCARD"][ArticlePosition];
 
     try {
@@ -193,8 +193,6 @@ async function resetScheduler() {
             })
           updateDailyArticleCount(parseInt(ArticlePosition) + 1)
           newArticlePosition = parseInt(ArticlePosition) + 1;
-          console.log(newArticlePosition);
-
           console.log("sent the daily article to channels");
         } else {
           console.log("The server " + guild.name + " has no channels.");
@@ -208,7 +206,7 @@ async function resetScheduler() {
 }
 
 const serviceAccountKeyFile = "./google_sheets_api.json";
-const sheetId = '11GQgeNTh8qMT19pDi1ijEexGWesmi9BdFT7Mbkm-1QU'
+const sheetId = dotenv.parsed.sheetID
 const tabName = dotenv.parsed.tabName
 const range = 'A:C'
 
