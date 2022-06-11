@@ -4,12 +4,12 @@ var _ = require("lodash");
 var cronstrue = require("cronstrue");
 const schedule = require("node-schedule");
 var articles = fs.readFileSync("articles.json");
-const {google}= require("googleapis")
+const { google } = require("googleapis");
 const dotenv = require('dotenv').config();
 
 // parsing articles.json
 articles = JSON.parse(articles);
-// creating client
+// creating client.
 const client = new Discord.Client({
   intents: [Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES],
 });
@@ -24,11 +24,11 @@ categories = [
 ];
 
 categoryNames = [
-  "1. Wildcard",
-  "2. Living Better",
-  "2. Business & Tech",
-  "3. History & Culture",
-  "4. Science & Nature",
+  "1. Wildcard {wildcard}",
+  "2. Living Better {living better}",
+  "3. Business & Tech {business tech}",
+  "4. History & Culture {history culture}",
+  "5. Science & Nature {science nature}",
 ];
 
 const prefix = dotenv.parsed.PREFIX;
@@ -148,11 +148,36 @@ function BMCLinkScheduler() {
     });
   });
 }
-
+async function updateDailyArticleCount(newArticlePosition) {
+  const googleSheetClient = await getGoogleSheetClient();
+  newdata = [
+    ["count", newArticlePosition]
+  ]
+  await _updateGoogleSheet(googleSheetClient, sheetId, "Sheet2", "A:B", newdata)
+}
 // resetting schedule after changing timings
-function resetScheduler() {
+async function resetScheduler() {
   console.log(rule);
+  const googleSheetClient = await getGoogleSheetClient();
+  var data_onSheet = await readGoogleSheet(googleSheetClient, sheetId, 'Sheet2', range);
+  ArticlePosition = data_onSheet[0][1];
+  var newArticlePosition = ArticlePosition;
+
   const job = schedule.scheduleJob(rule, function () {
+    numberofArticles = articles["WILDCARD"].length;
+
+    console.log(ArticlePosition);
+    article = articles["WILDCARD"][ArticlePosition];
+
+    try {
+      articleLink = article["Link to Article"][0];
+
+    } catch (error) {
+      console.log(error);
+      dailyUpdatesChannel.send("An error occured, could you please try again");
+    }
+    console.log("sent daily article succesfully");
+
     articleLink = fetchRandomArticle("WILDCARD");
     client.guilds.cache.each((guild) => {
       try {
@@ -162,6 +187,14 @@ function resetScheduler() {
           ) || guild.channels.cache.first();
         if (channel) {
           channel.send(articleLink)
+            .then((dailyArticle) => {
+              dailyArticle.react('⬆'),
+                dailyArticle.react("⬇️")
+            })
+          updateDailyArticleCount(parseInt(ArticlePosition) + 1)
+          newArticlePosition = parseInt(ArticlePosition) + 1;
+          console.log(newArticlePosition);
+
           console.log("sent the daily article to channels");
         } else {
           console.log("The server " + guild.name + " has no channels.");
@@ -175,7 +208,7 @@ function resetScheduler() {
 }
 
 const serviceAccountKeyFile = "./google_sheets_api.json";
-const sheetId = dotenv.parsed.sheetId
+const sheetId = '11GQgeNTh8qMT19pDi1ijEexGWesmi9BdFT7Mbkm-1QU'
 const tabName = dotenv.parsed.tabName
 const range = 'A:C'
 
@@ -213,7 +246,7 @@ async function _writeGoogleSheet(googleSheetClient, sheetId, tabName, range, dat
   })
 }
 
-async function _updateGoogleSheet(googleSheetClient, sheetId, tabName,rangeupdate,data){
+async function _updateGoogleSheet(googleSheetClient, sheetId, tabName, rangeupdate, data) {
   await googleSheetClient.spreadsheets.values.update({
     spreadsheetId: sheetId,
     range: `${tabName}!${rangeupdate}`,
@@ -227,56 +260,56 @@ async function _updateGoogleSheet(googleSheetClient, sheetId, tabName,rangeupdat
 async function getArticle(str_id) {
   // Generating google sheet client
   const googleSheetClient = await getGoogleSheetClient();
-  var data_onSheet =await readGoogleSheet(googleSheetClient, sheetId, tabName, range);
-  index_ofguildID=0
+  var data_onSheet = await readGoogleSheet(googleSheetClient, sheetId, tabName, range);
+  index_ofguildID = 0
   var guildid_flag = false
-  data_onSheet.forEach((value,index) => {
-    if (str_id == value[0]){
+  data_onSheet.forEach((value, index) => {
+    if (str_id == value[0]) {
       guildid_flag = true
       index_ofguildID = index
     }
   })
-  if (guildid_flag){
+  if (guildid_flag) {
     var time_sheet = {
-      hr : data_onSheet[index_ofguildID][1],
-      min : data_onSheet[index_ofguildID][2],
+      hr: data_onSheet[index_ofguildID][1],
+      min: data_onSheet[index_ofguildID][2],
     }
   }
-  else{
+  else {
     var time_sheet = {
-      hr : 10,
-      min : 0,
+      hr: 10,
+      min: 0,
     }
   }
   return time_sheet;
 }
 
-async function setArticle(str_id,set_hr,set_min) {
+async function setArticle(str_id, set_hr, set_min) {
   const googleSheetClient = await getGoogleSheetClient();
-  var data_onSheet =await readGoogleSheet(googleSheetClient, sheetId, tabName, range);
-  index_ofguildID=0
+  var data_onSheet = await readGoogleSheet(googleSheetClient, sheetId, tabName, range);
+  index_ofguildID = 0
   var guildid_flag = false
-  data_onSheet.forEach((value,index) => {
-    if (str_id == value[0]){
+  data_onSheet.forEach((value, index) => {
+    if (str_id == value[0]) {
       guildid_flag = true
       index_ofguildID = index
     }
   })
-  if (guildid_flag){
-    if(set_hr != parseInt(data_onSheet[index_ofguildID][1]) || parseInt(set_min != data_onSheet[index_ofguildID][2])){
-      row=index_ofguildID+1
+  if (guildid_flag) {
+    if (set_hr != parseInt(data_onSheet[index_ofguildID][1]) || parseInt(set_min != data_onSheet[index_ofguildID][2])) {
+      row = index_ofguildID + 1
       rangeupdate = `B${row}`
       newdata = [
-        [set_hr,set_min]
+        [set_hr, set_min]
       ]
       await _updateGoogleSheet(googleSheetClient, sheetId, tabName, rangeupdate, newdata)
     }
   }
-  else{
+  else {
     const dataToBeInserted = [
-       [str_id, set_hr, set_min ]
-      ]
-      await _writeGoogleSheet(googleSheetClient, sheetId, tabName, range, dataToBeInserted);
+      [str_id, set_hr, set_min]
+    ]
+    await _writeGoogleSheet(googleSheetClient, sheetId, tabName, range, dataToBeInserted);
   }
 }
 
@@ -332,31 +365,31 @@ client.on("message", (msg) => {
       }
       if (categories.includes(category)) {
         msg.channel.send(fetchRandomArticle(category))
-        .then((embed) => {
-          embed.react('⬆'),
-            embed.react("⬇️")
-        })
-        .catch((err) => {
-        console.log(err);
-        msg.channel.send("```coudn't fetch the article at the moment :( ```");
-        });
+          .then((embed) => {
+            embed.react('⬆'),
+              embed.react("⬇️")
+          })
+          .catch((err) => {
+            console.log(err);
+            msg.channel.send("```coudn't fetch the article at the moment :( ```");
+          });
       } else {
         if (msgRecievied[2] == "time") {
           let hr_OnSheet;
-          getArticle((msg.guild.id).toString()).then(response => { hr_OnSheet =  response })
-          setTimeout(()=>{
-          rule.hour = parseInt(hr_OnSheet.hr);
-          rule.minute = parseInt(hr_OnSheet.min);
-          },1300)
-          
-          setTimeout(() =>{
-          var cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay}`;
-          msg.channel.send(
-            "The daily article will be coming " +
-            cronstrue.toString(cronExpression)
-          );
-          },1600)
-          
+          getArticle((msg.guild.id).toString()).then(response => { hr_OnSheet = response })
+          setTimeout(() => {
+            rule.hour = parseInt(hr_OnSheet.hr);
+            rule.minute = parseInt(hr_OnSheet.min);
+          }, 1300)
+
+          setTimeout(() => {
+            var cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay}`;
+            msg.channel.send(
+              "The daily article will be coming " +
+              cronstrue.toString(cronExpression)
+            );
+          }, 1600)
+
         } else {
           msg.channel.send(
             "```The specified category doesn't exists. The available categories are:\n" +
@@ -373,7 +406,7 @@ client.on("message", (msg) => {
     displayDailyArticleTime = true;   //if true send daily article time expression
     setTimeCommand = msg.content.split(" ");
     if (setTimeCommand[2] == "days") {
-      try { 
+      try {
         if (
           setTimeCommand.length === 5 &&
           setTimeCommand[3] != "" &&
@@ -411,10 +444,10 @@ client.on("message", (msg) => {
           );
         } else if (time[0] < 23 || time[1] < 59 || time[0] >= 0 || time[1] >= 0) {
           let guildid = msg.guild.id
-          let str_id=guildid.toString()
-          set_hr=time[0]
-          set_min=time[1]
-          setArticle(str_id,set_hr,set_min)
+          let str_id = guildid.toString()
+          set_hr = time[0]
+          set_min = time[1]
+          setArticle(str_id, set_hr, set_min)
           displayDailyArticleTime = true;
           rule.hour = time[0];
           rule.minute = time[1];
