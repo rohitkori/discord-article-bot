@@ -384,12 +384,6 @@ client.on("message", (msg) => {
           catch {
             console.log("Unable to fetch time at the moment")
           }
-          // let hr_OnSheet;
-          // getArticle((msg.guild.id).toString()).then(response => { hr_OnSheet = response })
-          // setTimeout(() => {
-          //   rule.hour = parseInt(hr_OnSheet.hr);
-          //   rule.minute = parseInt(hr_OnSheet.min);
-          // }, 1300)
 
           setTimeout(() => {
             var cronExpression = `${rule.minute} ${rule.hour} * * ${startDay}-${endDay}`;
